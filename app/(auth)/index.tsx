@@ -81,7 +81,7 @@ export default function SignIn() {
                 style={styles.modalButton}
                 onPress={() => setHowToMenu(!howToMenu)}
               >
-                <Text style={styles.modalText}>Got it</Text>
+                <Text style={styles.modalBtnText}>Got it</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    width: 320,
+    width: 300,
     height: 400,
     backgroundColor: "#343434",
     borderRadius: 5,
@@ -245,19 +245,25 @@ const styles = StyleSheet.create({
   },
   modalText: {
     fontSize: 17,
-    textAlign: "left",
+    textAlign: "center",
     color: "white",
+    marginHorizontal: 25,
   },
   modalButton: {
-    alignSelf: "baseline",
     marginTop: 25,
-    backgroundColor: "#262626",
+    backgroundColor: "whitesmoke",
     paddingVertical: 15,
     paddingHorizontal: 35,
     borderRadius: 45,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 0,
+  },
+  modalBtnText: {
+    fontSize: 17,
+    textAlign: "center",
+    color: "#262626",
+    marginHorizontal: 25,
   },
   close: {
     width: "100%",

@@ -13,14 +13,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: "./assets/images/adaptive-icon.png",
+      foregroundImage: "./assets/images/icon.png",
       backgroundColor: "#ffffff",
     },
     package: "com.lspacedev.hideandseek",
   },
   extra: {
     eas: {
-      projectId: "2dc5de4b-9f85-43b3-ac63-aba6241dd850",
+      projectId: "b0da8d37-5fc4-431e-8532-0a837bc89ae3",
     },
     API_URL: process.env.API_URL,
   },

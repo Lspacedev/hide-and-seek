@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: Dimensions.get("window").width / 2,
-    height: (Dimensions.get("window").height - 280) / 3,
+    height: (Dimensions.get("window").height - 260) / 3,
     position: "relative",
     backgroundColor: "white",
     borderRadius: 15,

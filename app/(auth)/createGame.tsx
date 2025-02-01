@@ -36,7 +36,7 @@ export default function CreateGame() {
   const [gameName, setGameName] = useState<InputType>("");
   const [selectedRoleValue, setSelectedRoleValue] = useState("");
   const [error, setError] = useState<InputType>("");
-  const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
+  const url = Constants.expoConfig?.extra?.API_URL;
   const create = async () => {
     try {
       if (gameName === "" || selectedRoleValue === "") {
@@ -53,7 +53,6 @@ export default function CreateGame() {
       });
       const data = await res.json();
       if (res?.status) {
-        Alert.alert("Game created");
         await AsyncStorage.setItem("player", JSON.stringify(data.player));
         await AsyncStorage.setItem("game", JSON.stringify(data.game));
         await AsyncStorage.setItem("gameId", JSON.stringify(data.game._id));
@@ -129,11 +128,10 @@ export default function CreateGame() {
 }
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 5,
     backgroundColor: "#F7FFF7",
   },
   parent: {
-    flex: 1,
+    flexGrow: 1,
   },
   logo_container: {
     flex: 2,

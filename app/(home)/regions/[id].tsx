@@ -45,6 +45,22 @@ type data = {
   role: string;
   pos: PosProps[];
 };
+type GameType = {
+  name: string;
+  code: string;
+  regions: Region[];
+  rooms: number[];
+  totalPlays: number;
+  seeker_joined: boolean;
+  all_hiders_joined: boolean;
+  seeker_seeking: boolean;
+  all_hiders_hidden: boolean;
+  _id: string;
+};
+const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
+
+const socket = io(url, { transports: ["websocket"] });
+
 const Region = () => {
   const [player, setPlayer] = useState<PlayerType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,7 +72,6 @@ const Region = () => {
 
   const { id } = useLocalSearchParams();
 
-  const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
   const navigation = useNavigation();
 
   // Effect
@@ -94,35 +109,36 @@ const Region = () => {
   }, [player]);
   useFocusEffect(
     useCallback(() => {
+      const gameStatusUpdate = async (updatedGame: GameType) => {
+        const [region] = updatedGame.regions.filter(
+          (region: Region) => region.id === Number(id)
+        );
+
+        const gamePlays = region.plays;
+        setPlays(gamePlays);
+      };
       const getPlays = async () => {
-        const socket = io(url);
-
-        socket.on("game-status-update", async (updatedGame) => {
-          const [region] = updatedGame.regions.filter(
-            (region: Region) => region.id === Number(id)
-          );
-
-          const gamePlays = region.plays;
-          setPlays(gamePlays);
-        });
+        socket.on("game-status-update", gameStatusUpdate);
       };
       getPlays();
+      return () => {
+        socket.off("game-status-update", gameStatusUpdate);
+      };
     }, [])
   );
   useEffect(() => {
-    const socket = io(url);
-
-    socket.on("seeker-update", async (data) => {
+    const seekerUpdate = async (data: PlayerType) => {
       if (player?.role === "Seeker" && player?._id === data._id) {
         await AsyncStorage.removeItem("player");
         await AsyncStorage.setItem("player", JSON.stringify(data));
         getPlayer();
       }
-    });
+    };
+    socket.on("seeker-update", seekerUpdate);
 
-    // return () => {
-    //   socket.disconnect();
-    // };
+    return () => {
+      socket.off("seeker-update", seekerUpdate);
+    };
   }, [player]);
 
   const getData = async (key: string) => {
@@ -213,24 +229,25 @@ const Region = () => {
       Alert.alert("No target selected");
       return;
     }
-    setLoading(true);
+    //setLoading(true);
     //emit id and target to server
-    const socket = io(url);
     const data = {
       gameId: player?.game_id,
       playerId: player?._id,
       role: player?.role,
       pos: [Number(id), target],
     };
-    socket.emit("hide-position-update", data);
-    socket.on("hider-update", async (data) => {
+    const hiderUpdate = async (data: PlayerType) => {
       if (player?._id === data._id) {
         await AsyncStorage.removeItem("player");
         await AsyncStorage.setItem("player", JSON.stringify(data));
         getPlayer();
-        setLoading(false);
+        //setLoading(false);
       }
-    });
+    };
+    socket.emit("hide-position-update", data);
+    socket.on("hider-update", hiderUpdate);
+    //socket.removeListener("hider-update", hiderUpdate);
   };
   return (
     <View style={styles.container}>
@@ -266,13 +283,9 @@ const Region = () => {
               player.role === "Seeker" &&
               player.status === "SEEKING" && (
                 <View style={styles.comp}>
-                  <Text style={styles.text}>{`Plays : ${plays}/3`}</Text>
+                  <Text style={styles.text}>{`Plays left ${plays}`}</Text>
                 </View>
               )}
-
-            <TouchableOpacity style={styles.comp} onPress={quitGame}>
-              <Text style={styles.text}>Quit</Text>
-            </TouchableOpacity>
           </View>
         </View>
         <View style={styles.gameArea}>
@@ -288,6 +301,7 @@ const Region = () => {
                   ro={item}
                   target={target}
                   setTarget={(num) => setTarget(num)}
+                  plays={plays}
                 />
               );
             }}

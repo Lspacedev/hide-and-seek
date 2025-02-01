@@ -44,13 +44,16 @@ type GameType = {
   all_hiders_hidden: boolean;
   _id: string;
 };
+const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
+
+const socket = io(url, { transports: ["websocket"] });
+
 export default function Index() {
   const [player, setPlayer] = useState<PlayerType | null>(null);
   const [game, setGame] = useState<GameType | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAllowed, setIsAllowed] = useState(false);
   const [codeModal, setCodeModal] = useState(true);
-  const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
 
   useEffect(() => {
     (async () => {
@@ -84,19 +87,20 @@ export default function Index() {
   );
 
   useEffect(() => {
-    const socket = io(url);
-
-    socket.on("game-deleted", async () => {
+    const gameDeleted = async () => {
       await AsyncStorage.clear();
       router.push({ pathname: "/(auth)" });
-    });
-    socket.on("game-status-update", async (updatedGame) => {
+    };
+    const gameStatusUpdate = async (updatedGame: GameType) => {
       await AsyncStorage.removeItem("game");
       await AsyncStorage.setItem("game", JSON.stringify(updatedGame));
       getGame();
-    });
+    };
+    socket.on("game-deleted", gameDeleted);
+    socket.on("game-status-update", gameStatusUpdate);
     return () => {
-      socket.disconnect();
+      socket.off("game-deleted", gameDeleted);
+      socket.off("game-status-update", gameStatusUpdate);
     };
   }, []);
 
@@ -176,17 +180,18 @@ export default function Index() {
     }
   };
   const seek = async () => {
-    setLoading(true);
-    const socket = io(url);
-    socket.emit("start-seeking", { playerId: player?._id });
-    socket.on("seeker-update", async (data) => {
+    // setLoading(true);
+    const seekerUpdate = async (data: PlayerType) => {
       if (player?._id === data._id) {
         await AsyncStorage.removeItem("player");
         await AsyncStorage.setItem("player", JSON.stringify(data));
         getPlayer();
-        setLoading(false);
+        //setLoading(false);
       }
-    });
+    };
+    socket.emit("start-seeking", { playerId: player?._id });
+    socket.on("seeker-update", seekerUpdate);
+    //socket.removeListener("seeker-update", seekerUpdate);
   };
   const quit = async () => {
     try {
@@ -244,7 +249,7 @@ export default function Index() {
         <View style={styles.header}>
           <View style={styles.gameRoute}>
             <Text style={styles.headerText}>LOBBY</Text>
-            <Text style={styles.codeText}>{`Game Code: ${game?.code}`}</Text>
+            <Text style={styles.codeText}>{`CODE: ${game?.code}`}</Text>
           </View>
           <View style={styles.gamePanel}>
             <View style={styles.comp}>
@@ -298,7 +303,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
-    flexGrow: 1,
+    flex: 1,
     justifyContent: "center",
     paddingHorizontal: 0,
   },
@@ -311,10 +316,11 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     height: 100,
     backgroundColor: "#343434",
+    justifyContent: "space-evenly",
   },
   headerText: {
     color: "white",
-    fontSize: 25,
+    fontSize: 20,
   },
   gameRoute: {
     flex: 1,
@@ -361,7 +367,7 @@ const styles = StyleSheet.create({
     borderRadius: 60,
   },
   codeText: {
-    fontSize: 17,
+    fontSize: 12,
     textAlign: "center",
     color: "gray",
     marginHorizontal: 25,
@@ -397,7 +403,7 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    width: 320,
+    width: 300,
     height: 400,
     backgroundColor: "#343434",
     borderRadius: 5,

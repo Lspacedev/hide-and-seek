@@ -55,7 +55,6 @@ export default function joinGame() {
       });
       const data = await res.json();
       if (!data.error) {
-        Alert.alert("Game joined");
         await AsyncStorage.setItem("player", JSON.stringify(data.player));
         await AsyncStorage.setItem("game", JSON.stringify(data.game));
         await AsyncStorage.setItem("gameId", JSON.stringify(data.game._id));

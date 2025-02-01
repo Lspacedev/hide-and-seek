@@ -20,6 +20,7 @@ type RoomProps = {
   ro: number;
   target: number;
   setTarget: (num: number) => void;
+  plays: number;
 };
 
 type data = {
@@ -28,11 +29,29 @@ type data = {
   role: string;
   pos: number[];
 };
-const RoomCard: React.FC<RoomProps> = ({ re, ro, target, setTarget }) => {
+type PlayerType = {
+  game_id: string;
+  name: string;
+  role: string;
+  position: number[];
+  status: string;
+  joined: boolean;
+  _id: string;
+};
+const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
+
+const socket = io(url, { transports: ["websocket"] });
+
+const RoomCard: React.FC<RoomProps> = ({
+  re,
+  ro,
+  target,
+  setTarget,
+  plays,
+}) => {
   const [isSelected, setIsSelected] = useState(false);
   const [seekerSelected, setSeekerSelected] = useState(false);
   const [won, setWon] = useState(false);
-  const url = Constants.expoConfig?.extra?.API_URL ?? "http://localhost:3000";
 
   useEffect(() => {
     if (ro === target) {
@@ -42,9 +61,7 @@ const RoomCard: React.FC<RoomProps> = ({ re, ro, target, setTarget }) => {
     }
   }, [target]);
   useEffect(() => {
-    const socket = io(url);
-
-    socket.on("seeker-update", async (data) => {
+    const seekerUpdate = async (data: PlayerType) => {
       const player = await getData("player");
 
       if (
@@ -55,14 +72,14 @@ const RoomCard: React.FC<RoomProps> = ({ re, ro, target, setTarget }) => {
       ) {
         setWon(true);
       }
-    });
+    };
+    socket.on("seeker-update", seekerUpdate);
     return () => {
-      socket.disconnect();
+      socket.off("seeker-update", seekerUpdate);
     };
   }, []);
   useEffect(() => {
-    const socket = io(url);
-    socket.on("seeker-coords-update", async (seekerCoords) => {
+    const seekerCoordsUpdate = async (seekerCoords: number[]) => {
       const player = await getData("player");
       if (seekerCoords.length > 0 && player && player.role === "Hider") {
         if (re === seekerCoords[0]) {
@@ -73,10 +90,11 @@ const RoomCard: React.FC<RoomProps> = ({ re, ro, target, setTarget }) => {
           }
         }
       }
-    });
-    // return () => {
-    //   socket.disconnect();
-    // };
+    };
+    socket.on("seeker-coords-update", seekerCoordsUpdate);
+    return () => {
+      socket.off("seeker-coords-update", seekerCoordsUpdate);
+    };
   }, []);
   const getData = async (key: string) => {
     try {
@@ -88,11 +106,12 @@ const RoomCard: React.FC<RoomProps> = ({ re, ro, target, setTarget }) => {
   };
 
   const updatePos = async () => {
-    const socket = io(url);
-
     const player = await getData("player");
 
     if (player && player.role === "Hider" && player.status === "HIDDEN") {
+      return;
+    }
+    if (player && player.role === "Seeker" && plays === 0) {
       return;
     }
 
