@@ -2,6 +2,10 @@
 
 Hide and Seek game, where players can hide and seek.
 
+### Hide and Seek Multiplayer Game | Backend
+
+[https://github.com/Lspacedev/hide-and-seek-api](https://github.com/Lspacedev/hide-and-seek-api)
+
 ## Prerequisites
 
 - React Native
